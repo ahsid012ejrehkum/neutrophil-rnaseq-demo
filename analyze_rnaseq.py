@@ -35,21 +35,43 @@ for gene in counts.index:
 p_values = np.array(p_values)
 
 # Volcano plot
-plt.figure(figsize=(8,6))
-plt.scatter(log2fc, -np.log10(p_values), color="gray")
+cytokines = ["IL1A", "IL6", "TNF", "TSLP"]
+chemokines = ["CXCL8", "CCL5", "CCL11", "CCL17", "CXCL16"]
+mmps = ["MMP2", "MMP8", "MMP9"]
+neutrophil_products = ["MPO", "ELANE", "LTF", "LCN2", "CAMP", "AZU1", "DEFA1"]
 
-# highlight key inflammatory genes
-highlight_genes = ["IL1A","IL6","CXCL8","TNF","TSLP","CCL5","MMP9","MPO","ELANE","LTF","LCN2","CAMP"]
-for gene in highlight_genes:
-    if gene in log2fc.index:
-        plt.scatter(log2fc.loc[gene], -np.log10(p_values[counts.index == gene]), color="red")
-        plt.text(log2fc.loc[gene], -np.log10(p_values[counts.index == gene]) + 0.2, gene)
+significant = (log2fc > 1) & (p_values < 0.05)
+
+plt.figure(figsize=(8,6))
+
+# background genes
+plt.scatter(log2fc, -np.log10(p_values), color="lightgray", label="Other genes")
+
+# helper function
+def plot_group(gene_list, color, label):
+    genes = [g for g in gene_list if g in log2fc.index]
+    plt.scatter(
+        log2fc.loc[genes],
+        -np.log10(p_values[counts.index.isin(genes)]),
+        color=color,
+        label=label
+    )
+
+plot_group(cytokines, "red", "Cytokines")
+plot_group(chemokines, "orange", "Chemokines")
+plot_group(mmps, "purple", "MMPs")
+plot_group(neutrophil_products, "blue", "Neutrophil products")
+
+# significance lines
+plt.axvline(1, linestyle="--")
+plt.axhline(-np.log10(0.05), linestyle="--")
 
 plt.xlabel("log2 Fold Change (Lesion vs Control)")
 plt.ylabel("-log10(p-value)")
-plt.title("Volcano Plot of Differential Expression")
+plt.title("Volcano Plot with Inflammatory Gene Classes")
+plt.legend()
 plt.tight_layout()
-plt.savefig("volcano.png")
+plt.savefig("volcano_colored.png")
 plt.close()
 
 # Heatmap of selected inflammatory genes
